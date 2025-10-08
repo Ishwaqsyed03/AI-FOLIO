@@ -65,7 +65,8 @@ function App() {
 
   return (
   <div className="min-h-screen relative pb-10 bg-[#050507] text-white overflow-x-hidden">
-      {/* Metallic neutral radial highlights */}
+    <div style={{color:'red', fontSize:'2rem', textAlign:'center', marginTop:'2rem', zIndex:9999, position:'relative'}}>Hello World Test</div>
+  {/* Metallic neutral radial highlights */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-1/4 -left-1/4 w-[60vw] h-[60vw] rounded-full bg-[radial-gradient(circle_at_center,rgba(80,80,85,0.18),rgba(0,0,0,0.02)70%,transparent)] blur-3xl" />
         <div className="absolute top-1/3 -right-1/3 w-[55vw] h-[55vw] rounded-full bg-[radial-gradient(circle_at_center,rgba(120,120,130,0.15),rgba(0,0,0,0.02)65%,transparent)] blur-3xl" />
