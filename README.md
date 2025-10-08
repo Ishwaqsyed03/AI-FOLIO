@@ -125,6 +125,8 @@ Your downloaded portfolio includes:
 2. Push the `dist` folder contents to your GitHub repository
 3. Enable GitHub Pages in repository settings
 
+> **Note for Custom Domains**: This project is configured with `base: '/'` in `vite.config.js` for custom domain deployment. If you're deploying to a GitHub Pages subdirectory (e.g., `username.github.io/AI-FOLIO/`), change the base path to `base: '/AI-FOLIO/'` before building.
+
 ## 🛠️ Technology Stack
 
 - **Frontend Framework**: React 18
