@@ -1,6 +1,6 @@
 # PowerShell script to install local git hooks from .githooks into .git\hooks
 Param()
-$repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$repoRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Definition)
 $source = Join-Path $repoRoot ".githooks"
 $target = Join-Path $repoRoot ".git\hooks"
 if (-not (Test-Path $source)) { Write-Output "No .githooks directory found. Nothing to install."; exit 0 }
