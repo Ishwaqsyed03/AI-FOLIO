@@ -1,0 +1,8 @@
+#!/bin/sh
+# Prevent accidental commit of .env files
+if git diff --cached --name-only | grep -E "(^|/)\.env(\$|/)" >/dev/null 2>&1; then
+  echo "Error: You are attempting to commit a .env file. This is blocked by pre-commit hook to protect secrets."
+  echo "If you need to add environment variables, add them to .env.local and ensure .env is in .gitignore."
+  exit 1
+fi
+exit 0
