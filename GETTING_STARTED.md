@@ -31,10 +31,18 @@ Your AI Portfolio Maker application is ready to use! 🚀
 **IMPORTANT:** You need a Gemini API key to use the chatbot feature.
 
 1. Get your free API key: https://makersuite.google.com/app/apikey
-2. Open the `.env` file in the root directory
+2. Open the `.env` file in the root directory (created during `npm install`)
 3. Add your API key:
    ```
    VITE_GEMINI_API_KEY=your_api_key_here
+   ```
+   Optional one-command setup:
+   ```
+   # macOS/Linux
+   VITE_GEMINI_API_KEY=your_api_key_here npm install
+
+   # Windows (PowerShell)
+   $env:VITE_GEMINI_API_KEY="your_api_key_here"; npm install
    ```
 
 ### 2. Start Development Server

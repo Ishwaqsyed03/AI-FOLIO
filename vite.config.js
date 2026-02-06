@@ -9,5 +9,8 @@ export default defineConfig({
   base: process.env.NODE_ENV === 'development' ? '/' : './',
   server: {
     port: 3000,
+    fs: {
+      deny: ['docs/**'],
+    },
   },
 })

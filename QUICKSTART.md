@@ -8,9 +8,18 @@ Then open: http://localhost:3000
 
 ## 🔑 Add Your API Key
 1. Get key: https://makersuite.google.com/app/apikey
-2. Edit `.env` file
+2. Edit `.env` file (created during `npm install`)
 3. Add: `VITE_GEMINI_API_KEY=your_key_here`
 4. Restart server
+
+Optional one-command setup:
+```bash
+# macOS/Linux
+VITE_GEMINI_API_KEY=your_key_here npm install
+
+# Windows (PowerShell)
+$env:VITE_GEMINI_API_KEY="your_key_here"; npm install
+```
 
 ## 📦 Build & Deploy
 ```bash

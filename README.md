@@ -42,13 +42,19 @@ Create stunning portfolio websites with the power of AI! AI Portfolio Maker is a
    npm install
    ```
 
-3. **Set up environment variables**
+3. **Add your Gemini API key**
+   The install step creates `.env` from `.env.example` if it does not exist.
+   You can also auto-fill it during install:
    ```bash
-   # Copy the example env file
-   cp .env.example .env
-   
-   # Edit .env and add your Gemini API key
-   # VITE_GEMINI_API_KEY=your_api_key_here
+   # macOS/Linux
+   VITE_GEMINI_API_KEY=your_api_key_here npm install
+
+   # Windows (PowerShell)
+   $env:VITE_GEMINI_API_KEY="your_api_key_here"; npm install
+   ```
+   Or edit `.env` manually and add:
+   ```bash
+   VITE_GEMINI_API_KEY=your_api_key_here
    ```
 
 4. **Start development server**
