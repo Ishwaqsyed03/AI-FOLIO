@@ -1,14 +1,23 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import {
+  clearRuntimeGeminiKey,
+  createGeminiModel,
+  isGeminiInvalidKeyError,
+  toGeminiUserMessage,
+} from './geminiClient';
 
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-
-let genAI;
 let model;
 
-if (API_KEY) {
-  genAI = new GoogleGenerativeAI(API_KEY);
-  model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-}
+const getModel = () => {
+  if (!model) {
+    model = createGeminiModel({ allowPrompt: true });
+  }
+
+  if (!model) {
+    throw new Error('Gemini API key not configured. Paste a valid key when prompted to continue.');
+  }
+
+  return model;
+};
 
 // Extract text from PDF file using Gemini's vision capabilities
 export const extractTextFromPDF = async (file) => {
@@ -52,14 +61,12 @@ const fileToBase64 = (file) => {
 
 // Use Gemini to extract text from PDF
 const extractWithGemini = async (base64Data) => {
-  if (!model) {
-    throw new Error('Gemini API key not configured');
-  }
+  const activeModel = getModel();
 
   const prompt = `Extract all text content from this PDF document. Return only the raw text, no formatting or explanations. Include all information: names, contact details, work experience, education, skills, projects, etc.`;
 
   try {
-    const result = await model.generateContent([
+    const result = await activeModel.generateContent([
       {
         inlineData: {
           mimeType: 'application/pdf',
@@ -75,6 +82,12 @@ const extractWithGemini = async (base64Data) => {
     return text;
   } catch (error) {
     console.error('❌ Gemini PDF extraction error:', error);
+
+    if (isGeminiInvalidKeyError(error)) {
+      clearRuntimeGeminiKey();
+      model = null;
+      throw new Error(toGeminiUserMessage(error));
+    }
     
     // Fallback: try basic text extraction
     try {
@@ -133,9 +146,7 @@ const basicPDFExtraction = async (base64Data) => {
 
 // Use Gemini AI to parse resume data from text
 export const parseResumeWithAI = async (resumeText) => {
-  if (!model) {
-    throw new Error('Gemini API key not configured.');
-  }
+  const activeModel = getModel();
 
   const prompt = `You are a resume parser. Extract the following information from this resume text and return it in a structured JSON format:
 
@@ -186,7 +197,7 @@ Important:
 
   try {
     console.log('🤖 Sending text to Gemini for parsing...');
-    const result = await model.generateContent(prompt);
+    const result = await activeModel.generateContent(prompt);
     const response = await result.response;
     let text = response.text();
     
@@ -266,6 +277,12 @@ Important:
     return parsedData;
   } catch (error) {
     console.error('❌ Error parsing resume with AI:', error);
+
+    if (isGeminiInvalidKeyError(error)) {
+      clearRuntimeGeminiKey();
+      model = null;
+      throw new Error(toGeminiUserMessage(error));
+    }
     
     if (error.message.includes('JSON')) {
       throw new Error('Could not understand the resume format. The AI response was not properly structured.');

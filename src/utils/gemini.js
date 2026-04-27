@@ -1,17 +1,23 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import {
+  clearRuntimeGeminiKey,
+  createGeminiModel,
+  isGeminiInvalidKeyError,
+  toGeminiUserMessage,
+} from './geminiClient';
 
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-
-console.log('API Key loaded:', API_KEY ? 'Yes (length: ' + API_KEY.length + ')' : 'No');
-
-let genAI;
 let model;
 
-if (API_KEY) {
-  genAI = new GoogleGenerativeAI(API_KEY);
-  model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-  console.log('Gemini model initialized successfully');
-}
+const getModel = () => {
+  if (!model) {
+    model = createGeminiModel({ allowPrompt: true });
+  }
+
+  if (!model) {
+    throw new Error('Gemini API key not configured. Paste a valid key when prompted to continue.');
+  }
+
+  return model;
+};
 
 const conversationHistory = [];
 
@@ -45,17 +51,15 @@ export const initializeChat = () => {
 };
 
 export const sendMessage = async (message) => {
-  if (!model) {
-    throw new Error('Gemini API key not configured. Please add VITE_GEMINI_API_KEY to your .env file.');
-  }
-
   try {
+    const activeModel = getModel();
+
     conversationHistory.push({
       role: 'user',
       parts: [{ text: message }],
     });
 
-    const chat = model.startChat({
+    const chat = activeModel.startChat({
       history: conversationHistory.slice(0, -1),
       generationConfig: {
         maxOutputTokens: 200,
@@ -75,7 +79,11 @@ export const sendMessage = async (message) => {
     return text;
   } catch (error) {
     console.error('Gemini API Error:', error);
-    throw error;
+    if (isGeminiInvalidKeyError(error)) {
+      clearRuntimeGeminiKey();
+      model = null;
+    }
+    throw new Error(toGeminiUserMessage(error));
   }
 };
 
