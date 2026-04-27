@@ -17,11 +17,18 @@ const LivePreview = ({ portfolioData, template, onBack, onDataChange }) => {
   const [isPrivateRepo, setIsPrivateRepo] = useState(false);
   const [deployStatus, setDeployStatus] = useState('');
   const [deployResult, setDeployResult] = useState(null);
+  const [livePagesUrl, setLivePagesUrl] = useState('');
   const [isWaitingForPages, setIsWaitingForPages] = useState(false);
   const [pagesWaitSeconds, setPagesWaitSeconds] = useState(0);
   const [pagesBuildStatus, setPagesBuildStatus] = useState('queued');
   const [viewMode, setViewMode] = useState('desktop'); // desktop, tablet, mobile
   const TemplateComponent = template.component;
+
+  const addCacheBust = (url) => {
+    if (!url) return '';
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}v=${Date.now()}`;
+  };
 
   const handleDownload = async () => {
     console.log('💾 LivePreview - Starting ZIP generation with data:', portfolioData);
@@ -63,6 +70,7 @@ const LivePreview = ({ portfolioData, template, onBack, onDataChange }) => {
       });
 
       setDeployResult(result);
+      setLivePagesUrl(addCacheBust(result.pagesUrl));
       setIsWaitingForPages(true);
       setDeployStatus('Deployment created. Waiting for GitHub Pages to go live...');
 
@@ -80,6 +88,7 @@ const LivePreview = ({ portfolioData, template, onBack, onDataChange }) => {
 
       if (waitResult.ready) {
         setDeployStatus(`Live link is ready in ${waitResult.elapsedSeconds}s.`);
+        setLivePagesUrl(addCacheBust(result.pagesUrl));
       } else {
         setDeployStatus('Pages build is taking longer than expected. Your link may become live shortly.');
       }
@@ -259,7 +268,7 @@ const LivePreview = ({ portfolioData, template, onBack, onDataChange }) => {
                   Repo: <a className="text-cyan-300 hover:underline" href={deployResult.repoUrl} target="_blank" rel="noreferrer">{deployResult.repoUrl}</a>
                 </div>
                 <div>
-                  Live link: <a className="text-cyan-300 hover:underline" href={deployResult.pagesUrl} target="_blank" rel="noreferrer">{deployResult.pagesUrl}</a>
+                  Live link: <a className="text-cyan-300 hover:underline" href={livePagesUrl || deployResult.pagesUrl} target="_blank" rel="noreferrer">{livePagesUrl || deployResult.pagesUrl}</a>
                 </div>
               </div>
             </div>

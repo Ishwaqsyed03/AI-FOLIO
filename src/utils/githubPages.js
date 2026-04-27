@@ -48,6 +48,21 @@ const githubRequest = async (path, token, options = {}) => {
 
 const getCurrentUser = async (token) => githubRequest('/user', token);
 
+const getFileShaIfExists = async ({ token, owner, repoName, path, branch }) => {
+  try {
+    const fileInfo = await githubRequest(
+      `/repos/${owner}/${repoName}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`,
+      token
+    );
+    return fileInfo?.sha || null;
+  } catch (error) {
+    if (/Not Found/i.test(error.message)) {
+      return null;
+    }
+    throw error;
+  }
+};
+
 const createRepoIfNeeded = async ({ token, owner, repoName, isPrivate, description }) => {
   try {
     await githubRequest('/user/repos', token, {
@@ -83,12 +98,15 @@ const createRepoIfNeeded = async ({ token, owner, repoName, isPrivate, descripti
 };
 
 const putFile = async ({ token, owner, repoName, path, content, message, branch }) => {
+  const sha = await getFileShaIfExists({ token, owner, repoName, path, branch });
+
   await githubRequest(`/repos/${owner}/${repoName}/contents/${encodeURIComponent(path)}`, token, {
     method: 'PUT',
     body: JSON.stringify({
       message,
       content: encodeBase64Utf8(content),
-      branch
+      branch,
+      ...(sha ? { sha } : {})
     })
   });
 };
