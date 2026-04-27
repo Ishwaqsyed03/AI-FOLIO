@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Loader2, Sparkles, CheckCircle, Upload, FileText } from 'lucide-react';
 import { initializeChat, sendMessage, generateSuggestions } from '../utils/gemini';
 import { extractTextFromPDF, parseResumeWithAI } from '../utils/resumeParser';
+import { extractPortfolioFromTextWithHF, extractPortfolioFromTextHeuristic } from '../utils/hfResumeExtractor';
 
 const ChatBot = ({ onDataComplete }) => {
   const [messages, setMessages] = useState([]);
@@ -11,6 +12,8 @@ const ChatBot = ({ onDataComplete }) => {
   const [suggestions, setSuggestions] = useState([]);
   const [collectedData, setCollectedData] = useState({});
   const [uploadingPDF, setUploadingPDF] = useState(false);
+  const [pastedProfileText, setPastedProfileText] = useState('');
+  const [extractingPastedText, setExtractingPastedText] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressMessage, setProgressMessage] = useState('');
   const [progressError, setProgressError] = useState(false);
@@ -242,6 +245,93 @@ const ChatBot = ({ onDataComplete }) => {
     event.target.value = ''; // Reset file input
   };
 
+  const handlePastedTextExtraction = async () => {
+    if (!pastedProfileText.trim() || extractingPastedText) return;
+
+    setExtractingPastedText(true);
+    const processingMessage = {
+      role: 'bot',
+      content: '🧠 Extracting skills, experience, and projects from your pasted text using HuggingFace NER...',
+      timestamp: new Date()
+    };
+    setMessages((prev) => [...prev, processingMessage]);
+
+    try {
+      const parsedData = await extractPortfolioFromTextWithHF(pastedProfileText);
+
+      const successMessage = {
+        role: 'bot',
+        content: `✅ Done! I extracted ${parsedData.skills.length} skills, ${parsedData.experience.length} experience entries, and ${parsedData.projects.length} projects. Moving to template selection...`,
+        timestamp: new Date()
+      };
+      setMessages((prev) => [...prev, successMessage]);
+
+      setTimeout(() => {
+        onDataComplete(parsedData);
+      }, 1000);
+    } catch (error) {
+      console.warn('⚠️ HuggingFace extraction failed, attempting Gemini fallback:', error);
+
+      try {
+        let fallbackData = null;
+        let geminiError = null;
+
+        for (let attempt = 1; attempt <= 3; attempt += 1) {
+          try {
+            // Retry for transient 503/high-demand responses from Gemini.
+            fallbackData = await parseResumeWithAI(pastedProfileText);
+            geminiError = null;
+            break;
+          } catch (attemptError) {
+            geminiError = attemptError;
+            const message = String(attemptError?.message || '');
+            const isRetryable = /503|high demand|temporar|try again later/i.test(message);
+            if (!isRetryable || attempt === 3) break;
+            await new Promise((resolve) => setTimeout(resolve, attempt * 1200));
+          }
+        }
+
+        if (!fallbackData) {
+          throw geminiError || new Error('Gemini fallback failed.');
+        }
+
+        const fallbackMessage = {
+          role: 'bot',
+          content: `⚠️ HuggingFace extraction failed (${error.message}). I used Gemini fallback and extracted ${fallbackData.skills.length} skills. Moving to template selection...`,
+          timestamp: new Date()
+        };
+        setMessages((prev) => [...prev, fallbackMessage]);
+
+        setTimeout(() => {
+          onDataComplete(fallbackData);
+        }, 1000);
+      } catch (fallbackError) {
+        try {
+          const localData = extractPortfolioFromTextHeuristic(pastedProfileText);
+          const localMessage = {
+            role: 'bot',
+            content: `⚠️ HuggingFace failed: ${error.message}\n⚠️ Gemini fallback failed: ${fallbackError.message}\n✅ I used local/offline heuristic extraction so you can continue now. Moving to template selection...`,
+            timestamp: new Date()
+          };
+          setMessages((prev) => [...prev, localMessage]);
+
+          setTimeout(() => {
+            onDataComplete(localData);
+          }, 1000);
+        } catch (localError) {
+          const errorMessage = {
+            role: 'bot',
+            content: `❌ HuggingFace failed: ${error.message}\n❌ Gemini fallback failed: ${fallbackError.message}\n❌ Local fallback failed: ${localError.message}\n\nTry disabling VPN/ad-blockers, checking network access, and retrying with more detailed text.`,
+            timestamp: new Date()
+          };
+          setMessages((prev) => [...prev, errorMessage]);
+        }
+      }
+    }
+
+    setExtractingPastedText(false);
+  };
+
   const extractPortfolioData = (msgs) => {
     // Extract data from conversation messages
     const allMessages = msgs.map(m => ({ role: m.role, content: m.content }));
@@ -456,6 +546,32 @@ const ChatBot = ({ onDataComplete }) => {
           )}
 
           <div ref={messagesEndRef} />
+        </div>
+
+        {/* Pasted Text Extraction */}
+        <div className="px-6 py-4 bg-slate-900/60 border-t border-white/10">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <p className="text-sm font-medium text-indigo-100">Paste Resume/LinkedIn Text (Auto-tag with ML)</p>
+            <span className="text-[11px] text-indigo-200/70">HuggingFace NER</span>
+          </div>
+          <textarea
+            value={pastedProfileText}
+            onChange={(e) => setPastedProfileText(e.target.value)}
+            placeholder="Paste your resume or LinkedIn profile text here. We'll auto-extract skills, experience, and projects."
+            className="w-full min-h-[110px] resize-y rounded-xl border border-white/10 bg-slate-800/60 px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            disabled={extractingPastedText || isLoading || uploadingPDF}
+          />
+          <div className="mt-3 flex justify-end">
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={handlePastedTextExtraction}
+              disabled={!pastedProfileText.trim() || extractingPastedText || isLoading || uploadingPDF}
+              className="rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {extractingPastedText ? 'Extracting...' : 'Auto-Extract with ML'}
+            </motion.button>
+          </div>
         </div>
 
         {/* Suggestions */}

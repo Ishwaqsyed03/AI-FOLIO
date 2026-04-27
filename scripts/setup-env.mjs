@@ -8,15 +8,19 @@ const repoRoot = path.resolve(__dirname, '..');
 const envPath = path.join(repoRoot, '.env');
 const examplePath = path.join(repoRoot, '.env.example');
 const apiKey = process.env.VITE_GEMINI_API_KEY || '';
+const hfApiKey = process.env.VITE_HF_API_KEY || '';
 
 if (fs.existsSync(envPath)) {
   console.log('setup-env: .env already exists.');
   process.exit(0);
 }
 
-if (apiKey) {
-  fs.writeFileSync(envPath, `VITE_GEMINI_API_KEY=${apiKey}\n`);
-  console.log('setup-env: Created .env from VITE_GEMINI_API_KEY.');
+if (apiKey || hfApiKey) {
+  const lines = [];
+  if (apiKey) lines.push(`VITE_GEMINI_API_KEY=${apiKey}`);
+  if (hfApiKey) lines.push(`VITE_HF_API_KEY=${hfApiKey}`);
+  fs.writeFileSync(envPath, `${lines.join('\n')}\n`);
+  console.log('setup-env: Created .env from provided environment variables.');
   process.exit(0);
 }
 

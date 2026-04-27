@@ -5,6 +5,7 @@ Create stunning portfolio websites with the power of AI! AI Portfolio Maker is a
 ## 🌟 Features
 
 - **🤖 AI-Powered Data Collection**: Interactive chatbot powered by Google Gemini API collects your portfolio information through natural conversation
+- **🧠 ML Skills Extraction & Auto-Tagging**: Paste resume/LinkedIn text and extract skills, experience, and projects automatically using HuggingFace NER inference
 - **💡 Smart Suggestions**: Get contextual suggestions after every chatbot response for faster data entry
 - **🎨 10 Premium Templates**: Choose from 10 professionally designed portfolio templates:
   - Modern Minimal
@@ -19,6 +20,7 @@ Create stunning portfolio websites with the power of AI! AI Portfolio Maker is a
   - Designer Creative
 - **👀 Live Preview**: See your portfolio come to life in real-time with responsive preview (desktop, tablet, mobile)
 - **📦 One-Click Download**: Download your complete portfolio as a .zip file ready for deployment
+- **🚀 Push it to GitHub**: Deploy directly from the preview screen to a GitHub repository and publish with GitHub Pages
 - **✨ Premium UI**: Framer Motion animations, gradient themes, and glass-morphism effects
 - **🚀 No Backend Required**: 100% client-side application
 - **📱 Fully Responsive**: All templates work perfectly on all devices
@@ -29,6 +31,7 @@ Create stunning portfolio websites with the power of AI! AI Portfolio Maker is a
 
 - Node.js 18+ installed
 - Google Gemini API key ([Get one here](https://makersuite.google.com/app/apikey))
+- HuggingFace API key for NER extraction ([Get one here](https://huggingface.co/settings/tokens))
 
 ### Installation
 
@@ -42,19 +45,23 @@ Create stunning portfolio websites with the power of AI! AI Portfolio Maker is a
    npm install
    ```
 
-3. **Add your Gemini API key**
+3. **Add your API keys**
    The install step creates `.env` from `.env.example` if it does not exist.
    You can also auto-fill it during install:
    ```bash
    # macOS/Linux
-   VITE_GEMINI_API_KEY=your_api_key_here npm install
+   VITE_GEMINI_API_KEY=your_api_key_here
+   VITE_HF_API_KEY=your_huggingface_api_key_here
+   npm install
 
    # Windows (PowerShell)
-   $env:VITE_GEMINI_API_KEY="your_api_key_here"; npm install
+   $env:VITE_GEMINI_API_KEY="your_api_key_here"; $env:VITE_HF_API_KEY="your_huggingface_api_key_here"; npm install
    ```
    Or edit `.env` manually and add:
    ```bash
    VITE_GEMINI_API_KEY=your_api_key_here
+   VITE_HF_API_KEY=your_huggingface_api_key_here
+   VITE_HF_RESUME_NER_MODEL=jjzha/jobbert_skill_extraction
    ```
 
 4. **Start development server**
@@ -67,7 +74,9 @@ Create stunning portfolio websites with the power of AI! AI Portfolio Maker is a
 
 ## 🎯 How to Use
 
-1. **Chat with AI**: Answer the chatbot's questions about your professional background
+1. **Paste & Auto-Extract (Fastest)**: Paste your resume or LinkedIn text and click **Auto-Extract with ML** to auto-tag skills, experience, and projects
+
+2. **Chat with AI**: Answer the chatbot's questions about your professional background
    - Name and title
    - Bio/About me
    - Skills
@@ -76,17 +85,31 @@ Create stunning portfolio websites with the power of AI! AI Portfolio Maker is a
    - Education
    - Contact information
 
-2. **Use Quick Replies**: Click on suggested responses to speed up the process
+3. **Use Quick Replies**: Click on suggested responses to speed up the process
 
-3. **Select Template**: Choose from 10 beautiful portfolio designs
+4. **Select Template**: Choose from 10 beautiful portfolio designs
 
-4. **Preview**: View your portfolio in desktop, tablet, or mobile view
+5. **Preview**: View your portfolio in desktop, tablet, or mobile view
 
-5. **Download**: Click "Download Portfolio" to get a complete .zip file with:
+6. **Download**: Click "Download Portfolio" to get a complete .zip file with:
    - HTML file
    - CSS file
    - README with deployment instructions
    - All assets included
+
+7. **Push it to GitHub** (optional):
+   - Open Live Preview and click **Push it to GitHub**
+   - Provide a fine-grained GitHub Personal Access Token (PAT)
+   - Enter repository name
+   - Click **Deploy Now**
+   - The app creates/updates the repo, enables GitHub Pages, and shows your live link
+
+### GitHub Token Permissions
+
+For the deploy button, use a fine-grained token with these repository permissions:
+- **Contents**: Read and Write
+- **Pages**: Read and Write
+- **Metadata**: Read-only
 
 ## 📦 What's in the Downloaded Portfolio?
 
@@ -137,6 +160,7 @@ Your downloaded portfolio includes:
 - **Styling**: TailwindCSS
 - **Animations**: Framer Motion
 - **AI Integration**: Google Gemini API
+- **ML Extraction**: HuggingFace Inference API (NER)
 - **File Generation**: JSZip + FileSaver.js
 - **Icons**: Lucide React
 - **Build Tool**: Vite
@@ -193,6 +217,8 @@ Create a `.env` file in the root directory:
 
 ```env
 VITE_GEMINI_API_KEY=your_gemini_api_key_here
+VITE_HF_API_KEY=your_huggingface_api_key_here
+VITE_HF_RESUME_NER_MODEL=jjzha/jobbert_skill_extraction
 ```
 
 Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)

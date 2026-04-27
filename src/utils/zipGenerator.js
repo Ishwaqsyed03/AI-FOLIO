@@ -645,29 +645,12 @@ export const generateZip = async (portfolioData, template) => {
   
   const zip = new JSZip();
 
-  // Try SSR first (only for mapped templates)
-  let htmlBody = null;
-  if (template && template.id) {
-    htmlBody = await trySSRTemplate(template.id, portfolioData);
-  }
-
-  // If SSR succeeded, wrap manually; else use existing static generator
-  let finalIndex;
-  if (htmlBody) {
-    // Build head similar to generateHTML but reuse styling config
-    const { name, title } = portfolioData;
-    finalIndex = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>${name} - ${title}</title>
-    <script src="https://cdn.tailwindcss.com"></script><script>tailwind.config={theme:{extend:{colors:{fuchsia:{50:'#fdf4ff',100:'#fae8ff',200:'#f5d0fe',300:'#f0abfc',400:'#e879f9',500:'#d946ef',600:'#c026d3',700:'#a21caf',800:'#86198f',900:'#701a75'},purple:{50:'#faf5ff',100:'#f3e8ff',200:'#e9d5ff',300:'#d8b4fe',400:'#c084fc',500:'#a855f7',600:'#9333ea',700:'#7e22ce',800:'#6b21a8',900:'#581c87'},indigo:{50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81'}},blur:{'3xl':'96px'}}}}</script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin /><link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet" /><link rel="stylesheet" href="styles.css" />
-    </head><body>${htmlBody}</body></html>`;
-  } else {
-    finalIndex = generateHTML(portfolioData, template);
-  }
+  const files = await generatePortfolioFiles(portfolioData, template);
 
   // Add files to zip
-  zip.file('index.html', finalIndex);
-  zip.file('styles.css', generateCSS(template));
-  zip.file('README.md', generateREADME(portfolioData, template));
+  zip.file('index.html', files['index.html']);
+  zip.file('styles.css', files['styles.css']);
+  zip.file('README.md', files['README.md']);
 
   // Generate and download zip
   try {
@@ -678,4 +661,28 @@ export const generateZip = async (portfolioData, template) => {
     console.error('Error generating ZIP:', error);
     throw error;
   }
+};
+
+export const generatePortfolioFiles = async (portfolioData, template) => {
+  let htmlBody = null;
+  if (template && template.id) {
+    htmlBody = await trySSRTemplate(template.id, portfolioData);
+  }
+
+  let finalIndex;
+  if (htmlBody) {
+    const { name, title } = portfolioData;
+    finalIndex = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>${name} - ${title}</title>
+    <script src="https://cdn.tailwindcss.com"></script><script>tailwind.config={theme:{extend:{colors:{fuchsia:{50:'#fdf4ff',100:'#fae8ff',200:'#f5d0fe',300:'#f0abfc',400:'#e879f9',500:'#d946ef',600:'#c026d3',700:'#a21caf',800:'#86198f',900:'#701a75'},purple:{50:'#faf5ff',100:'#f3e8ff',200:'#e9d5ff',300:'#d8b4fe',400:'#c084fc',500:'#a855f7',600:'#9333ea',700:'#7e22ce',800:'#6b21a8',900:'#581c87'},indigo:{50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81'}},blur:{'3xl':'96px'}}}}</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin /><link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet" /><link rel="stylesheet" href="styles.css" />
+    </head><body>${htmlBody}</body></html>`;
+  } else {
+    finalIndex = generateHTML(portfolioData, template);
+  }
+
+  return {
+    'index.html': finalIndex,
+    'styles.css': generateCSS(template),
+    'README.md': generateREADME(portfolioData, template)
+  };
 };

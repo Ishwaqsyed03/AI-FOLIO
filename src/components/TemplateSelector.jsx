@@ -1,10 +1,32 @@
-import React, { useRef, useState, useLayoutEffect, useCallback } from 'react';
+import React, { useRef, useState, useLayoutEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Layout } from 'lucide-react';
+import { ArrowLeft, Layout, Sparkles } from 'lucide-react';
 import { templates } from '../templates';
+import { getTemplateRecommendations } from '../utils/templateRecommender';
 
 const TemplateSelector = ({ portfolioData, onTemplateSelect, onBack }) => {
   console.log('🎨 TemplateSelector - Received portfolioData:', portfolioData);
+
+  const recommendations = useMemo(
+    () => getTemplateRecommendations(portfolioData, templates),
+    [portfolioData]
+  );
+
+  const recommendationByTemplateId = useMemo(
+    () => new Map(recommendations.map((item) => [item.templateId, item])),
+    [recommendations]
+  );
+
+  const orderedTemplates = useMemo(() => {
+    if (recommendations.length === 0) return templates;
+
+    const rank = new Map(recommendations.map((item, index) => [item.templateId, index]));
+    return [...templates].sort((a, b) => {
+      const rankA = rank.has(a.id) ? rank.get(a.id) : Number.MAX_SAFE_INTEGER;
+      const rankB = rank.has(b.id) ? rank.get(b.id) : Number.MAX_SAFE_INTEGER;
+      return rankA - rankB;
+    });
+  }, [recommendations]);
   
   return (
     <div className="container mx-auto px-4 max-w-7xl">
@@ -29,17 +51,24 @@ const TemplateSelector = ({ portfolioData, onTemplateSelect, onBack }) => {
             Choose Your Template
           </h2>
           <p className="text-gray-300 mt-1">Select a design that represents you best</p>
+          {recommendations.length > 0 && (
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-fuchsia-400/35 bg-fuchsia-500/10 px-3 py-1 text-xs text-fuchsia-200">
+              <Sparkles className="w-3.5 h-3.5" />
+              ML ranking is active. Top matches are shown first.
+            </div>
+          )}
         </div>
       </motion.div>
 
       {/* Templates Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
-        {templates.map((template, index) => (
+        {orderedTemplates.map((template, index) => (
           <TemplateThumbnail
             key={template.id}
             template={template}
             index={index}
             data={portfolioData}
+            recommendation={recommendationByTemplateId.get(template.id)}
             onSelect={() => onTemplateSelect(template)}
           />
         ))}
@@ -49,7 +78,7 @@ const TemplateSelector = ({ portfolioData, onTemplateSelect, onBack }) => {
 };
 
 // Thumbnail subcomponent renders the real template component scaled for a pixel snapshot
-const TemplateThumbnail = ({ template, data, index, onSelect }) => {
+const TemplateThumbnail = ({ template, data, index, onSelect, recommendation }) => {
   const containerRef = useRef(null);
   const [scale, setScale] = useState(0.2); // default fallback scale
   const BASE_WIDTH = 1440; // design reference width
@@ -104,6 +133,12 @@ const TemplateThumbnail = ({ template, data, index, onSelect }) => {
         </div>
         {/* Template Info */}
         <div className="p-4">
+          {recommendation && (
+            <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-200">
+              <Sparkles className="w-3 h-3" />
+              AI Match {recommendation.confidence}%
+            </div>
+          )}
           <h3 className="text-xl font-bold text-white mb-1">{template.name}</h3>
           <p className="text-sm text-gray-300 mb-3 line-clamp-2">{template.description}</p>
           <div className="flex flex-wrap gap-2">
