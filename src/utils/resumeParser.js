@@ -4,6 +4,7 @@ import {
   isGeminiInvalidKeyError,
   toGeminiUserMessage,
 } from './geminiClient';
+import { isLocalModelEnabled, runLocalPrompt } from './localModelClient';
 
 let model;
 
@@ -146,7 +147,12 @@ const basicPDFExtraction = async (base64Data) => {
 
 // Use Gemini AI to parse resume data from text
 export const parseResumeWithAI = async (resumeText) => {
-  const activeModel = getModel();
+  let activeModel = null;
+  try {
+    activeModel = getModel();
+  } catch {
+    activeModel = null;
+  }
 
   const prompt = `You are a resume parser. Extract the following information from this resume text and return it in a structured JSON format:
 
@@ -196,10 +202,35 @@ Important:
 - Ensure all arrays are properly populated with at least one item if data exists`;
 
   try {
-    console.log('🤖 Sending text to Gemini for parsing...');
-    const result = await activeModel.generateContent(prompt);
-    const response = await result.response;
-    let text = response.text();
+    let text = '';
+
+    try {
+      if (!activeModel) {
+        throw new Error('Gemini model unavailable');
+      }
+
+      console.log('🤖 Sending text to Gemini for parsing...');
+      const result = await activeModel.generateContent(prompt);
+      const response = await result.response;
+      text = response.text();
+    } catch (geminiError) {
+      if (isGeminiInvalidKeyError(geminiError)) {
+        clearRuntimeGeminiKey();
+        model = null;
+      }
+
+      if (!isLocalModelEnabled()) {
+        throw geminiError;
+      }
+
+      console.warn('⚠️ Gemini parsing failed, trying local model fallback:', geminiError);
+      text = await runLocalPrompt({
+        prompt,
+        systemPrompt: 'You are a strict resume parser. Return only valid JSON with no markdown.',
+        temperature: 0.2,
+        maxOutputTokens: 1400,
+      });
+    }
     
     console.log('🤖 Gemini AI response length:', text.length);
     console.log('🤖 First 200 chars of response:', text.substring(0, 200));

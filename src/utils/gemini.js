@@ -4,6 +4,7 @@ import {
   isGeminiInvalidKeyError,
   toGeminiUserMessage,
 } from './geminiClient';
+import { isLocalModelEnabled, runLocalChat } from './localModelClient';
 
 let model;
 
@@ -83,30 +84,38 @@ export const sendMessage = async (message) => {
       clearRuntimeGeminiKey();
       model = null;
     }
+
+    if (isLocalModelEnabled()) {
+      try {
+        const localHistory = conversationHistory
+          .slice(1)
+          .map((entry) => ({
+            role: entry.role === 'model' ? 'assistant' : 'user',
+            content: entry.parts?.[0]?.text || '',
+          }))
+          .filter((entry) => entry.content.trim());
+
+        const localReply = await runLocalChat({
+          systemPrompt,
+          history: localHistory.slice(0, -1),
+          message,
+          temperature: 0.7,
+          maxOutputTokens: 220,
+        });
+
+        conversationHistory.push({
+          role: 'model',
+          parts: [{ text: localReply }],
+        });
+
+        return localReply;
+      } catch (localError) {
+        throw new Error(`${toGeminiUserMessage(error)} Local fallback failed: ${localError.message}`);
+      }
+    }
+
     throw new Error(toGeminiUserMessage(error));
   }
-};
-
-export const parsePortfolioData = (conversationText) => {
-  // Simple parser - in production, you might want to use Gemini to extract structured data
-  const data = {
-    name: '',
-    title: '',
-    bio: '',
-    skills: [],
-    experience: [],
-    projects: [],
-    education: [],
-    contact: {
-      email: '',
-      phone: '',
-      linkedin: '',
-      github: '',
-    },
-  };
-
-  // This is a placeholder - in a real implementation, you'd use NLP or ask Gemini to format the data
-  return data;
 };
 
 // Generate contextual suggestions based on the conversation state

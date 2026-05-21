@@ -1,18 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ChatBot from './components/ChatBot';
 import TemplateSelector from './components/TemplateSelector';
 import LivePreview from './components/LivePreview';
+import ResumeScreeningDashboard from './components/ResumeScreeningDashboard';
 import { Sparkles } from 'lucide-react';
 
 function App() {
-  const [step, setStep] = useState('chat'); // 'chat', 'template', 'preview'
+  const [step, setStep] = useState('chat'); // 'chat', 'ats', 'template', 'preview'
   const [portfolioData, setPortfolioData] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [userName, setUserName] = useState('');
   const [welcomeDone, setWelcomeDone] = useState(false);
   const chatContainerRef = useRef(null);
-  const chatFocusRef = useRef(null);
 
   useEffect(() => {
     if (welcomeDone) {
@@ -38,6 +38,21 @@ function App() {
     console.log('📊 App.jsx - Data received from ChatBot:', data);
     setPortfolioData(data);
     console.log('📊 App.jsx - portfolioData state updated, moving to template selection');
+    setSelectedTemplate(null);
+    setStep('ats');
+  };
+
+  const handleATSToTemplates = (updatedData) => {
+    const looksLikePortfolio = updatedData && (
+      typeof updatedData.name === 'string' ||
+      Array.isArray(updatedData.skills) ||
+      Array.isArray(updatedData.projects) ||
+      Array.isArray(updatedData.experience)
+    );
+
+    if (looksLikePortfolio) {
+      setPortfolioData(updatedData);
+    }
     setStep('template');
   };
 
@@ -54,6 +69,11 @@ function App() {
     setSelectedTemplate(null);
   };
 
+  const handleBackToATS = () => {
+    setStep('ats');
+    setSelectedTemplate(null);
+  };
+
   const handleBackToTemplates = () => {
     setStep('template');
     setSelectedTemplate(null);
@@ -62,6 +82,11 @@ function App() {
   const handleDataChange = (updated) => {
     setPortfolioData(updated);
   };
+
+  const handleWelcomeComplete = useCallback((n) => {
+    setUserName(n);
+    setWelcomeDone(true);
+  }, []);
 
   return (
   <div className="min-h-screen relative pb-10 bg-[#050507] text-white overflow-x-hidden">
@@ -108,11 +133,19 @@ function App() {
             </motion.div>
             <motion.div
               className={`px-4 py-2 rounded-full text-sm ${
+                step === 'ats' ? 'bg-purple-500/30 text-purple-300' : 'text-gray-400'
+              }`}
+              whileHover={{ scale: 1.05 }}
+            >
+              2. ATS Dashboard
+            </motion.div>
+            <motion.div
+              className={`px-4 py-2 rounded-full text-sm ${
                 step === 'template' ? 'bg-purple-500/30 text-purple-300' : 'text-gray-400'
               }`}
               whileHover={{ scale: 1.05 }}
             >
-              2. Select Template
+              3. Select Template
             </motion.div>
             <motion.div
               className={`px-4 py-2 rounded-full text-sm ${
@@ -120,7 +153,7 @@ function App() {
               }`}
               whileHover={{ scale: 1.05 }}
             >
-              3. Preview & Download
+              4. Preview & Download
             </motion.div>
           </div>
           </div>
@@ -130,7 +163,7 @@ function App() {
       {/* Main Content */}
   <main className="pt-32 pb-8">
         {!welcomeDone && (
-          <WelcomeOverlay onComplete={(n) => { setUserName(n); setWelcomeDone(true); }} />
+          <WelcomeOverlay onComplete={handleWelcomeComplete} />
         )}
 
         <AnimatePresence mode="wait">
@@ -150,6 +183,23 @@ function App() {
 
           {/* About Developer section intentionally removed per user request */}
 
+          {welcomeDone && step === 'ats' && (
+            <motion.div
+              key="ats"
+              initial={{ opacity: 0, x: -100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 100 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ResumeScreeningDashboard
+                portfolioData={portfolioData}
+                onBack={handleBackToChat}
+                onContinue={handleATSToTemplates}
+                onApplyRecommendations={handleDataChange}
+              />
+            </motion.div>
+          )}
+
           {welcomeDone && step === 'template' && (
             <motion.div
               key="template"
@@ -161,7 +211,7 @@ function App() {
               <TemplateSelector
                 portfolioData={portfolioData}
                 onTemplateSelect={handleTemplateSelect}
-                onBack={handleBackToChat}
+                onBack={handleBackToATS}
               />
             </motion.div>
           )}

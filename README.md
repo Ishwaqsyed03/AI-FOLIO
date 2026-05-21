@@ -23,6 +23,7 @@ Create stunning portfolio websites with the power of AI! AI Portfolio Maker is a
 - **🚀 Push it to GitHub**: Deploy directly from the preview screen to a GitHub repository and publish with GitHub Pages
 - **✨ Premium UI**: Framer Motion animations, gradient themes, and glass-morphism effects
 - **🚀 No Backend Required**: 100% client-side application
+- **🖥️ Local LLM Fallback (Ollama)**: Keep AI features running when Gemini quota is exhausted by using a local model
 - **📱 Fully Responsive**: All templates work perfectly on all devices
 
 ## 🚀 Quick Start
@@ -32,6 +33,7 @@ Create stunning portfolio websites with the power of AI! AI Portfolio Maker is a
 - Node.js 18+ installed
 - Google Gemini API key ([Get one here](https://makersuite.google.com/app/apikey))
 - HuggingFace API key for NER extraction ([Get one here](https://huggingface.co/settings/tokens))
+- Optional for quota-free local fallback: [Ollama](https://ollama.com/) installed locally
 
 ### Installation
 
@@ -69,6 +71,33 @@ Create stunning portfolio websites with the power of AI! AI Portfolio Maker is a
    npm run dev
    ```
 
+### Run with Local Model (Ollama fallback)
+
+If Gemini is rate-limited or unavailable, you can run a local model:
+
+1. Start Ollama and pull a model:
+   ```bash
+   ollama pull llama3.1:8b-instruct
+   ```
+
+2. Start the local AI proxy server (new terminal):
+   ```bash
+   npm run dev:server
+   ```
+
+3. Start frontend (another terminal):
+   ```bash
+   npm run dev
+   ```
+
+4. Ensure `.env` has:
+   ```bash
+   VITE_ENABLE_LOCAL_MODEL=true
+   VITE_LOCAL_AI_BASE_URL=http://localhost:11435
+   ```
+
+Local fallback is used automatically for chat, resume parsing, and ATS suggestions when Gemini fails.
+
 5. **Open your browser**
    Navigate to `http://localhost:3000`
 
@@ -96,7 +125,7 @@ Create stunning portfolio websites with the power of AI! AI Portfolio Maker is a
    - CSS file
    - README with deployment instructions
    - All assets included
-
+![alt text](image.png)
 7. **Push it to GitHub** (optional):
    - Open Live Preview and click **Push it to GitHub**
    - Provide a fine-grained GitHub Personal Access Token (PAT)

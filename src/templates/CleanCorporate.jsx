@@ -1,102 +1,159 @@
 import React from 'react';
-import { Briefcase, GraduationCap, Mail, Phone } from 'lucide-react';
+import { Mail, Phone, Github, Linkedin, Briefcase, GraduationCap, Award, ChevronRight } from 'lucide-react';
 
 const CleanCorporate = ({ data }) => {
+  const skills = data?.skills || [];
+  const experience = data?.experience || [];
+  const projects = data?.projects || [];
+  const education = data?.education || [];
+  const contact = data?.contact || {};
+  const customSections = data?.customSections || [];
+
   return (
-    <div className="bg-blue-50 text-gray-900 min-h-screen">
-      {/* Header Bar */}
-      <div className="bg-blue-900 text-white py-6">
-        <div className="max-w-6xl mx-auto px-8 flex items-center justify-between">
+    <div className="min-h-screen bg-white" style={{fontFamily:"'Inter','Helvetica Neue',Arial,sans-serif"}}>
+      <style>{`
+        @keyframes cc-slideRight{from{opacity:0;transform:translateX(-30px);}to{opacity:1;transform:translateX(0);}}
+        @keyframes cc-fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+        @keyframes cc-barFill{from{width:0;}to{width:var(--w);}}
+        .cc-f1{animation:cc-slideRight .7s ease both;}
+        .cc-f2{animation:cc-fadeUp .6s .15s ease both;}
+        .cc-f3{animation:cc-fadeUp .6s .3s ease both;}
+        .cc-f4{animation:cc-fadeUp .6s .45s ease both;}
+        .cc-card:hover{box-shadow:0 10px 40px rgba(30,58,138,0.1);transform:translateY(-3px);}
+        .cc-card{transition:all .3s ease;}
+        .cc-skill-bar{height:4px;border-radius:99px;background:linear-gradient(90deg,#1d4ed8,#3b82f6);animation:cc-barFill 1.2s ease both;animation-delay:var(--d);}
+        .cc-link:hover{color:#1d4ed8;}
+        .cc-link{transition:color .2s ease;}
+      `}</style>
+
+      {/* Top bar */}
+      <div className="h-1.5 w-full" style={{background:'linear-gradient(90deg,#1e3a8a,#2563eb,#3b82f6)'}} />
+
+      <div className="flex min-h-screen">
+        {/* Sidebar */}
+        <aside className="w-72 flex-shrink-0 text-white py-12 px-8 flex flex-col gap-8" style={{background:'linear-gradient(180deg,#1e3a8a 0%,#1e40af 60%,#1d4ed8 100%)'}}>
+          {/* Avatar placeholder */}
+          <div className="cc-f1">
+            <div className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center text-4xl font-black text-blue-800" style={{background:'rgba(255,255,255,0.15)',border:'3px solid rgba(255,255,255,0.3)'}}>
+              {(data?.name||'?').charAt(0).toUpperCase()}
+            </div>
+            <h1 className="text-2xl font-black text-center leading-tight mb-1">{data?.name||'Your Name'}</h1>
+            <p className="text-blue-200 text-sm text-center font-medium">{data?.title||'Your Title'}</p>
+          </div>
+
+          {/* Contact in sidebar */}
           <div>
-            <h1 className="text-4xl font-bold">{data.name}</h1>
-            <p className="text-xl text-blue-200">{data.title}</p>
+            <h3 className="text-xs font-bold tracking-widest uppercase text-blue-300 mb-4">Contact</h3>
+            <div className="space-y-3">
+              {contact.email&&<a href={`mailto:${contact.email}`} className="flex items-start gap-3 text-sm text-blue-100 hover:text-white transition-colors"><Mail size={14} className="mt-0.5 flex-shrink-0"/><span className="break-all">{contact.email}</span></a>}
+              {contact.phone&&<a href={`tel:${contact.phone}`} className="flex items-center gap-3 text-sm text-blue-100 hover:text-white transition-colors"><Phone size={14} className="flex-shrink-0"/>{contact.phone}</a>}
+              {contact.github&&<a href={`https://${contact.github}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm text-blue-100 hover:text-white transition-colors"><Github size={14} className="flex-shrink-0"/>GitHub</a>}
+              {contact.linkedin&&<a href={`https://${contact.linkedin}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm text-blue-100 hover:text-white transition-colors"><Linkedin size={14} className="flex-shrink-0"/>LinkedIn</a>}
+            </div>
           </div>
-          <div className="text-right text-sm">
-            {data.contact.email && <div className="flex items-center gap-2 justify-end"><Mail size={16} /> {data.contact.email}</div>}
-            {data.contact.phone && <div className="flex items-center gap-2 justify-end mt-1"><Phone size={16} /> {data.contact.phone}</div>}
-          </div>
-        </div>
-      </div>
 
-      <div className="max-w-6xl mx-auto px-8 py-12">
-        {/* Professional Summary */}
-        <section className="mb-12 bg-white rounded-lg shadow-md p-8">
-          <h2 className="text-2xl font-bold text-blue-900 mb-4">Professional Summary</h2>
-          <p className="text-gray-700 leading-relaxed">{data.bio}</p>
-        </section>
-
-        {/* Core Competencies */}
-        <section className="mb-12 bg-white rounded-lg shadow-md p-8">
-          <h2 className="text-2xl font-bold text-blue-900 mb-6">Core Competencies</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {data.skills.map((skill, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                <span className="text-gray-700">{skill}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Professional Experience */}
-        <section className="mb-12 bg-white rounded-lg shadow-md p-8">
-          <h2 className="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-2">
-            <Briefcase className="w-6 h-6" />
-            Professional Experience
-          </h2>
-          <div className="space-y-8">
-            {data.experience.map((exp, index) => (
-              <div key={index}>
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900">{exp.role}</h3>
-                    <p className="text-lg text-blue-700">{exp.company}</p>
+          {/* Skills in sidebar */}
+          <div>
+            <h3 className="text-xs font-bold tracking-widest uppercase text-blue-300 mb-4">Skills</h3>
+            <div className="space-y-4">
+              {skills.map((skill,i)=>(
+                <div key={i}>
+                  <div className="flex justify-between text-xs mb-1.5">
+                    <span className="text-blue-100">{skill}</span>
                   </div>
-                  <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded">{exp.duration}</span>
+                  <div className="h-1 rounded-full w-full" style={{background:'rgba(255,255,255,0.1)'}}>
+                    <div className="cc-skill-bar" style={{'--w':`${70+((i*17)%25)}%`,'--d':`${0.4+i*0.06}s`}} />
+                  </div>
                 </div>
-                <p className="text-gray-700">{exp.description}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </section>
 
-        {/* Key Projects */}
-        <section className="mb-12 bg-white rounded-lg shadow-md p-8">
-          <h2 className="text-2xl font-bold text-blue-900 mb-6">Key Projects</h2>
-          <div className="space-y-6">
-            {data.projects.map((project, index) => (
-              <div key={index} className="border-l-4 border-blue-600 pl-4">
-                <h3 className="text-lg font-bold text-gray-900">{project.name}</h3>
-                <p className="text-gray-700 mb-2">{project.description}</p>
-                <div className="flex flex-wrap gap-2">
-                  {project.technologies.map((tech, i) => (
-                    <span key={i} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                      {tech}
-                    </span>
+          {/* Education in sidebar */}
+          <div>
+            <h3 className="text-xs font-bold tracking-widest uppercase text-blue-300 mb-4">Education</h3>
+            <div className="space-y-4">
+              {education.map((edu,i)=>(
+                <div key={i}>
+                  <p className="text-xs text-blue-300 mb-0.5">{edu.year}</p>
+                  <p className="text-sm font-semibold text-white leading-tight">{edu.degree}</p>
+                  <p className="text-xs text-blue-200">{edu.institution}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        {/* Main content */}
+        <main className="flex-1 overflow-hidden">
+          {/* Header */}
+          <div className="px-10 py-12 border-b border-gray-100" style={{background:'linear-gradient(135deg,#f0f7ff,#ffffff)'}}>
+            <p className="cc-f2 text-gray-600 max-w-2xl leading-relaxed text-base">{data?.bio||''}</p>
+          </div>
+
+          <div className="px-10 py-10">
+            {/* Experience */}
+            <section className="mb-14">
+              <div className="flex items-center gap-3 mb-8">
+                <Briefcase size={20} className="text-blue-700" />
+                <h2 className="text-xl font-black text-gray-900 tracking-wide uppercase">Work Experience</h2>
+                <div className="flex-1 h-px bg-gray-100" />
+              </div>
+              <div className="space-y-8">
+                {experience.map((exp,i)=>(
+                  <div key={i} className="relative pl-6" style={{borderLeft:'2px solid #e5e7eb'}}>
+                    <div className="absolute -left-2 top-1 w-3.5 h-3.5 rounded-full bg-blue-600 border-2 border-white" style={{boxShadow:'0 0 0 2px #2563eb'}} />
+                    <div className="flex items-start justify-between gap-4 mb-2 flex-wrap">
+                      <h3 className="font-bold text-gray-900 text-lg">{exp.role}</h3>
+                      <span className="text-xs font-semibold px-3 py-1 rounded-full text-blue-700 bg-blue-50 border border-blue-100 flex-shrink-0">{exp.duration}</span>
+                    </div>
+                    <p className="text-blue-600 font-semibold text-sm mb-2">{exp.company}</p>
+                    <p className="text-gray-500 text-sm leading-relaxed">{exp.description}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Projects */}
+            <section className="mb-14">
+              <div className="flex items-center gap-3 mb-8">
+                <Award size={20} className="text-blue-700" />
+                <h2 className="text-xl font-black text-gray-900 tracking-wide uppercase">Projects</h2>
+                <div className="flex-1 h-px bg-gray-100" />
+              </div>
+              <div className="grid md:grid-cols-2 gap-5">
+                {projects.map((proj,i)=>(
+                  <div key={i} className="cc-card rounded-xl p-6 border border-gray-100">
+                    <h3 className="font-bold text-gray-900 mb-2">{proj.name}</h3>
+                    <p className="text-gray-500 text-sm leading-relaxed mb-4">{proj.description}</p>
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {(proj.technologies||[]).map((t,j)=>(
+                        <span key={j} className="px-2.5 py-1 text-xs font-medium rounded bg-blue-50 text-blue-700 border border-blue-100">{t}</span>
+                      ))}
+                    </div>
+                    {proj.link&&<a href={proj.link} target="_blank" rel="noopener noreferrer" className="cc-link flex items-center gap-1 text-xs font-semibold text-gray-400"><ChevronRight size={14}/>View Project</a>}
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {customSections.length>0&&(
+              <section>
+                <div className="space-y-8">
+                  {customSections.map((sec,i)=>(
+                    <div key={i} className="cc-card rounded-xl p-6 border border-gray-100">
+                      {sec.title&&<h2 className="font-bold text-gray-900 text-lg mb-3">{sec.title}</h2>}
+                      <p className="text-gray-500 text-sm leading-relaxed">{sec.content}</p>
+                    </div>
                   ))}
                 </div>
-              </div>
-            ))}
+              </section>
+            )}
           </div>
-        </section>
-
-        {/* Education */}
-        <section className="bg-white rounded-lg shadow-md p-8">
-          <h2 className="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-2">
-            <GraduationCap className="w-6 h-6" />
-            Education
-          </h2>
-          <div className="space-y-4">
-            {data.education.map((edu, index) => (
-              <div key={index}>
-                <h3 className="text-lg font-bold text-gray-900">{edu.degree}</h3>
-                <p className="text-gray-700">{edu.institution}</p>
-                <p className="text-sm text-gray-600">{edu.year}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        </main>
       </div>
+
+      <div className="h-1 w-full" style={{background:'linear-gradient(90deg,#1e3a8a,#2563eb,#3b82f6)'}} />
     </div>
   );
 };

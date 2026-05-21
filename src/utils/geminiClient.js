@@ -44,8 +44,8 @@ const writeRuntimeKey = (apiKey) => {
   }
 };
 
-const promptForRuntimeKey = () => {
-  if (typeof window === 'undefined' || hasPromptedForKey) {
+const promptForRuntimeKey = ({ force = false } = {}) => {
+  if (typeof window === 'undefined' || (hasPromptedForKey && !force)) {
     return '';
   }
 
@@ -60,10 +60,17 @@ const promptForRuntimeKey = () => {
   return key;
 };
 
-export const getGeminiApiKey = ({ allowPrompt = false } = {}) => {
+export const getGeminiApiKey = ({ allowPrompt = false, preferPrompt = false, forcePrompt = false } = {}) => {
   const runtimeKey = readRuntimeKey();
   if (runtimeKey) {
     return runtimeKey;
+  }
+
+  if (allowPrompt && preferPrompt) {
+    const promptedKey = promptForRuntimeKey({ force: forcePrompt });
+    if (promptedKey) {
+      return promptedKey;
+    }
   }
 
   const envKey = sanitizeApiKey(import.meta.env.VITE_GEMINI_API_KEY);
@@ -72,7 +79,7 @@ export const getGeminiApiKey = ({ allowPrompt = false } = {}) => {
   }
 
   if (allowPrompt) {
-    return promptForRuntimeKey();
+    return promptForRuntimeKey({ force: forcePrompt });
   }
 
   return '';
@@ -89,8 +96,12 @@ export const clearRuntimeGeminiKey = () => {
   }
 };
 
-export const createGeminiModel = ({ allowPrompt = false } = {}) => {
-  const apiKey = getGeminiApiKey({ allowPrompt });
+export const resetGeminiPromptState = () => {
+  hasPromptedForKey = false;
+};
+
+export const createGeminiModel = ({ allowPrompt = false, preferPrompt = false, forcePrompt = false } = {}) => {
+  const apiKey = getGeminiApiKey({ allowPrompt, preferPrompt, forcePrompt });
   if (!apiKey) {
     return null;
   }
@@ -109,9 +120,39 @@ export const isGeminiInvalidKeyError = (error) => {
   );
 };
 
+export const isGeminiRateLimitError = (error) => {
+  const message = (error?.message || '').toLowerCase();
+  return (
+    message.includes('429') ||
+    message.includes('quota') ||
+    message.includes('rate limit') ||
+    message.includes('rate-limit') ||
+    message.includes('generate_requestsperdayperprojectpermodel') ||
+    message.includes('free_tier_requests')
+  );
+};
+
+export const isGeminiServiceBusyError = (error) => {
+  const message = (error?.message || '').toLowerCase();
+  return (
+    message.includes('503') ||
+    message.includes('service unavailable') ||
+    message.includes('temporarily unavailable') ||
+    message.includes('high demand')
+  );
+};
+
 export const toGeminiUserMessage = (error) => {
   if (isGeminiInvalidKeyError(error)) {
     return 'Gemini API key is invalid for this live site. Paste a valid key when prompted, or store it in browser localStorage as ai_folio_gemini_api_key.';
+  }
+
+  if (isGeminiRateLimitError(error)) {
+    return 'Gemini request limit reached (HTTP 429). You have hit the current quota for this API key. Wait for quota reset, switch to a billed key/project, or add another valid Gemini key and retry.';
+  }
+
+  if (isGeminiServiceBusyError(error)) {
+    return 'Gemini is temporarily busy (HTTP 503/high demand). Please retry in a few moments.';
   }
 
   const message = error?.message || '';

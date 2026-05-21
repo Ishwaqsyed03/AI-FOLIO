@@ -10,8 +10,13 @@ export default {
         'gradient': 'gradient 8s linear infinite',
         'float': 'float 3s ease-in-out infinite',
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'loadingBar': 'loadingBar 1.4s linear infinite',
       },
       keyframes: {
+        loadingBar: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
         gradient: {
           '0%, 100%': {
             'background-size': '200% 200%',

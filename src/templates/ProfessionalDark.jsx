@@ -1,111 +1,182 @@
 import React from 'react';
-
-const renderMarkdown = (text='') => {
-  if (!text) return null; let html=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  html=html
-    .replace(/```([\s\S]*?)```/g,(m,code)=>`<pre class=\"bg-black text-gray-100 text-xs p-3 rounded mb-3 overflow-x-auto\"><code>${code.replace(/`/g,'&#96;')}</code></pre>`)
-    .replace(/`([^`]+)`/g,'<code class=\"bg-gray-800 px-1 rounded text-xs\">$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
-    .replace(/\*([^*]+)\*/g,'<em>$1</em>')
-    .replace(/\[(.+?)\]\((https?:[^\s)]+)\)/g,'<a href=\"$2\" class=\"text-cyan-400 underline\" target=\"_blank\" rel=\"noopener noreferrer\">$1</a>')
-    .replace(/^\s*[-*] (.*)$/gm,'<li>$1</li>');
-  html=html.replace(/(<li>.*<\/li>)/gs, m=>`<ul class=\"list-disc list-inside space-y-1 mb-3\">${m}</ul>`);
-  html=html.split(/\n{2,}/).map(p=>`<p class=\"mb-3 leading-relaxed\">${p}</p>`).join('');
-  return <div dangerouslySetInnerHTML={{__html: html}} />;
-};
-import { Mail, Github, Linkedin, Terminal } from 'lucide-react';
+import { Mail, Github, Linkedin, Terminal, ChevronRight } from 'lucide-react';
 
 const ProfessionalDark = ({ data }) => {
+  const skills = data?.skills || [];
+  const experience = data?.experience || [];
+  const projects = data?.projects || [];
+  const education = data?.education || [];
+  const contact = data?.contact || {};
+  const customSections = data?.customSections || [];
+
+  const skillLevels = [92, 88, 85, 90, 78, 95, 82, 87, 91, 80, 76, 93, 84, 79, 88, 94, 81, 86];
+
   return (
-    <div className="bg-gray-900 text-gray-100 min-h-screen">
-      <div className="max-w-6xl mx-auto px-8 py-12">
-        {/* Header */}
-        <header className="mb-16">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-5xl font-bold mb-3 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                {data.name}
-              </h1>
-              <p className="text-2xl text-gray-300 mb-4">{data.title}</p>
-              <p className="text-gray-400 max-w-2xl">{data.bio}</p>
+    <div className="min-h-screen" style={{background:'#0a0a0f', color:'#e2e8f0', fontFamily:"'Inter','Helvetica Neue',Arial,sans-serif"}}>
+      <style>{`
+        @keyframes pd-slideRight { from{opacity:0;transform:translateX(-40px);} to{opacity:1;transform:translateX(0);} }
+        @keyframes pd-barFill { from{width:0;} to{width:var(--w);} }
+        @keyframes pd-glow { 0%,100%{text-shadow:0 0 10px rgba(6,182,212,0.3);} 50%{text-shadow:0 0 30px rgba(6,182,212,0.8),0 0 60px rgba(6,182,212,0.3);} }
+        @keyframes pd-scanline { 0%{top:-10%;} 100%{top:110%;} }
+        @keyframes pd-blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+        @keyframes pd-fadeUp { from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);} }
+        .pd-f1{animation:pd-fadeUp 0.8s ease both;}
+        .pd-f2{animation:pd-fadeUp 0.8s 0.15s ease both;}
+        .pd-f3{animation:pd-fadeUp 0.8s 0.3s ease both;}
+        .pd-glow{animation:pd-glow 3s ease-in-out infinite;}
+        .pd-cursor{animation:pd-blink 1s step-end infinite;}
+        .pd-card{border:1px solid rgba(6,182,212,0.15);transition:all .3s ease;}
+        .pd-card:hover{border-color:rgba(6,182,212,0.5);box-shadow:0 0 40px rgba(6,182,212,0.1),inset 0 0 40px rgba(6,182,212,0.03);transform:translateY(-3px);}
+        .pd-bar{height:3px;border-radius:99px;background:linear-gradient(90deg,#06b6d4,#3b82f6);animation:pd-barFill 1.5s ease both;animation-delay:var(--delay);}
+        .pd-tag{border:1px solid rgba(6,182,212,0.2);transition:all .2s;}
+        .pd-tag:hover{border-color:rgba(6,182,212,0.6);background:rgba(6,182,212,0.1);color:#67e8f9;}
+        .pd-hex{clip-path:polygon(50% 0%,93.3% 25%,93.3% 75%,50% 100%,6.7% 75%,6.7% 25%);}
+      `}</style>
+
+      {/* Scanline effect */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{zIndex:0}}>
+        <div style={{position:'absolute',left:0,right:0,height:'2px',background:'linear-gradient(90deg,transparent,rgba(6,182,212,0.08),transparent)',animation:'pd-scanline 6s linear infinite'}} />
+        <div className="absolute inset-0 opacity-3" style={{backgroundImage:'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(6,182,212,0.01) 2px,rgba(6,182,212,0.01) 4px)'}} />
+        <div className="absolute inset-0 opacity-5" style={{backgroundImage:'radial-gradient(rgba(6,182,212,0.4) 1px,transparent 1px)',backgroundSize:'40px 40px'}} />
+      </div>
+
+      <div className="relative" style={{zIndex:1}}>
+        {/* Hero */}
+        <header className="min-h-screen flex items-center px-8 md:px-20 py-20" style={{borderBottom:'1px solid rgba(6,182,212,0.1)'}}>
+          <div className="max-w-6xl w-full">
+            <div className="pd-f1 text-xs font-mono text-cyan-600 mb-6 tracking-widest">
+              &gt; INITIALIZING_PORTFOLIO.EXE
+              <span className="pd-cursor text-cyan-400 ml-1">_</span>
             </div>
-            <Terminal className="w-12 h-12 text-cyan-400" />
-          </div>
-          <div className="flex gap-4 mt-6">
-            {data.contact.email && <a href={`mailto:${data.contact.email}`} className="text-cyan-400 hover:text-cyan-300"><Mail /></a>}
-            {data.contact.github && <a href={`https://${data.contact.github}`} className="text-cyan-400 hover:text-cyan-300"><Github /></a>}
-            {data.contact.linkedin && <a href={`https://${data.contact.linkedin}`} className="text-cyan-400 hover:text-cyan-300"><Linkedin /></a>}
+            <h1 className="pd-f2 pd-glow font-black leading-none mb-4" style={{fontSize:'clamp(4rem,9vw,8rem)',letterSpacing:'-0.04em',color:'#06b6d4'}}>
+              {data?.name || 'Your Name'}
+            </h1>
+            <div className="pd-f3 flex items-center gap-3 mb-8">
+              <Terminal size={20} className="text-cyan-500" />
+              <span className="text-xl text-gray-300 font-light">{data?.title || 'Your Title'}</span>
+            </div>
+            <p className="pd-f3 text-gray-500 max-w-2xl leading-relaxed mb-10 font-mono text-sm">
+              <span className="text-cyan-600">// </span>{data?.bio || ''}
+            </p>
+            <div className="flex flex-wrap gap-4">
+              {contact.email && <a href={`mailto:${contact.email}`} className="flex items-center gap-2 px-6 py-3 rounded text-sm font-mono font-medium" style={{background:'rgba(6,182,212,0.1)',border:'1px solid rgba(6,182,212,0.4)',color:'#67e8f9'}}><Mail size={15}/>{contact.email}</a>}
+              {contact.github && <a href={`https://${contact.github}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-6 py-3 rounded text-sm font-mono font-medium text-gray-400 hover:text-cyan-400" style={{border:'1px solid rgba(255,255,255,0.08)'}}><Github size={15}/>GitHub</a>}
+              {contact.linkedin && <a href={`https://${contact.linkedin}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-6 py-3 rounded text-sm font-mono font-medium text-gray-400 hover:text-cyan-400" style={{border:'1px solid rgba(255,255,255,0.08)'}}><Linkedin size={15}/>LinkedIn</a>}
+            </div>
           </div>
         </header>
 
-        {/* Skills */}
-        <section className="mb-16">
-          <h2 className="text-3xl font-bold mb-6 text-cyan-400">$ skills --list</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {data.skills.map((skill, index) => (
-              <div key={index} className="bg-gray-800 border border-gray-700 rounded-lg p-4 text-center hover:border-cyan-400 transition-colors">
-                <span className="text-gray-200">{skill}</span>
-              </div>
-            ))}
+        {/* Skills with progress bars */}
+        <section className="py-24 px-8 md:px-20" style={{background:'#0d0d18'}}>
+          <div className="max-w-6xl mx-auto">
+            <div className="mb-14">
+              <span className="font-mono text-cyan-600 text-xs tracking-widest">$ skills --verbose</span>
+              <h2 className="text-4xl font-bold text-white mt-2">Technical Expertise</h2>
+            </div>
+            <div className="grid md:grid-cols-2 gap-x-16 gap-y-8">
+              {skills.map((skill, i) => (
+                <div key={i}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-mono text-gray-300">{skill}</span>
+                    <span className="text-xs font-mono text-cyan-600">{skillLevels[i % skillLevels.length]}%</span>
+                  </div>
+                  <div className="h-px w-full rounded-full" style={{background:'rgba(255,255,255,0.06)'}}>
+                    <div className="pd-bar" style={{'--w':`${skillLevels[i%skillLevels.length]}%`, '--delay':`${0.5+i*0.08}s`}} />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
         {/* Experience */}
-        <section className="mb-16">
-          <h2 className="text-3xl font-bold mb-6 text-cyan-400">$ experience --show</h2>
-          {data.experience.map((exp, index) => (
-            <div key={index} className="mb-8 border-l-4 border-cyan-400 pl-6 py-2">
-              <h3 className="text-xl font-bold text-gray-100">{exp.role}</h3>
-              <p className="text-cyan-400">{exp.company}</p>
-              <p className="text-sm text-gray-500 mb-2">{exp.duration}</p>
-              <p className="text-gray-400">{exp.description}</p>
+        <section className="py-24 px-8 md:px-20">
+          <div className="max-w-6xl mx-auto">
+            <div className="mb-14">
+              <span className="font-mono text-cyan-600 text-xs tracking-widest">$ experience --show-all</span>
+              <h2 className="text-4xl font-bold text-white mt-2">Work Experience</h2>
             </div>
-          ))}
+            <div className="space-y-6">
+              {experience.map((exp, i) => (
+                <div key={i} className="pd-card rounded-xl p-8" style={{background:'rgba(255,255,255,0.02)'}}>
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-3">
+                      <ChevronRight size={16} className="text-cyan-500 flex-shrink-0" />
+                      <h3 className="text-xl font-bold text-white">{exp.role}</h3>
+                    </div>
+                    <span className="font-mono text-xs text-cyan-600 px-3 py-1 rounded" style={{background:'rgba(6,182,212,0.08)',border:'1px solid rgba(6,182,212,0.2)'}}>{exp.duration}</span>
+                  </div>
+                  <p className="text-cyan-400 font-medium mb-3 ml-7">{exp.company}</p>
+                  <p className="text-gray-500 leading-relaxed ml-7">{exp.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
         {/* Projects */}
-        <section className="mb-16">
-          <h2 className="text-3xl font-bold mb-6 text-cyan-400">$ projects --featured</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {data.projects.map((project, index) => (
-              <div key={index} className="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-cyan-400 transition-all">
-                <h3 className="text-xl font-bold mb-2 text-gray-100">{project.name}</h3>
-                <p className="text-gray-400 mb-4">{project.description}</p>
-                <div className="flex flex-wrap gap-2">
-                  {project.technologies.map((tech, i) => (
-                    <span key={i} className="px-2 py-1 bg-gray-900 text-cyan-400 text-xs rounded border border-gray-700">
-                      {tech}
-                    </span>
-                  ))}
+        <section className="py-24 px-8 md:px-20" style={{background:'#0d0d18'}}>
+          <div className="max-w-6xl mx-auto">
+            <div className="mb-14">
+              <span className="font-mono text-cyan-600 text-xs tracking-widest">$ projects --featured</span>
+              <h2 className="text-4xl font-bold text-white mt-2">Projects</h2>
+            </div>
+            <div className="grid md:grid-cols-2 gap-6">
+              {projects.map((proj, i) => (
+                <div key={i} className="pd-card rounded-xl p-8" style={{background:'rgba(255,255,255,0.02)'}}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-mono text-xs text-cyan-600">[{String(i+1).padStart(2,'0')}]</span>
+                    <span className="font-mono text-xs text-green-500">STATUS: DEPLOYED</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-3">{proj.name}</h3>
+                  <p className="text-gray-500 text-sm leading-relaxed mb-5">{proj.description}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(proj.technologies||[]).map((t,j)=>(
+                      <span key={j} className="pd-tag px-3 py-1 text-xs font-mono rounded text-gray-400" style={{background:'rgba(255,255,255,0.03)'}}>{t}</span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </section>
 
         {/* Education */}
-        <section>
-          <h2 className="text-3xl font-bold mb-6 text-cyan-400">$ education --list</h2>
-          {data.education.map((edu, index) => (
-            <div key={index} className="bg-gray-800 border border-gray-700 rounded-lg p-6 mb-4">
-              <h3 className="text-xl font-bold text-gray-100">{edu.degree}</h3>
-              <p className="text-gray-300">{edu.institution}</p>
-              <p className="text-gray-500">{edu.year}</p>
+        <section className="py-24 px-8 md:px-20">
+          <div className="max-w-6xl mx-auto">
+            <div className="mb-14">
+              <span className="font-mono text-cyan-600 text-xs tracking-widest">$ education --list</span>
+              <h2 className="text-4xl font-bold text-white mt-2">Education</h2>
             </div>
-          ))}
+            <div className="grid md:grid-cols-2 gap-6">
+              {education.map((edu, i) => (
+                <div key={i} className="pd-card rounded-xl p-8" style={{background:'rgba(255,255,255,0.02)'}}>
+                  <div className="w-8 h-8 rounded flex items-center justify-center font-mono text-xs font-bold text-cyan-400 mb-4" style={{background:'rgba(6,182,212,0.1)',border:'1px solid rgba(6,182,212,0.3)'}}>ED</div>
+                  <h3 className="text-lg font-bold text-white mb-2">{edu.degree}</h3>
+                  <p className="text-gray-400">{edu.institution}</p>
+                  <p className="font-mono text-xs text-cyan-600 mt-2">{edu.year}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
-        {Array.isArray(data.customSections) && data.customSections.length>0 && (
-          <section className="mt-16">
-            <h2 className="text-3xl font-bold mb-6 text-cyan-400">$ extra --sections</h2>
-            {data.customSections.map((sec,i)=>(
-              <div key={i} className="bg-gray-800 border border-gray-700 rounded-lg p-6 mb-6">
-                {sec.title && <h3 className="text-2xl font-bold text-gray-100 mb-3">{sec.title}</h3>}
-                <div className="prose prose-invert prose-sm max-w-none">{renderMarkdown(sec.content||'')}</div>
-              </div>
-            ))}
+        {customSections.length > 0 && (
+          <section className="py-24 px-8 md:px-20">
+            <div className="max-w-6xl mx-auto space-y-8">
+              {customSections.map((sec,i)=>(
+                <div key={i} className="pd-card rounded-xl p-8">
+                  {sec.title && <h2 className="text-2xl font-bold text-white mb-4">{sec.title}</h2>}
+                  <p className="text-gray-500 leading-relaxed font-mono text-sm">{sec.content}</p>
+                </div>
+              ))}
+            </div>
           </section>
         )}
+
+        <footer className="py-10 text-center font-mono text-xs text-gray-700 border-t border-cyan-900/30">
+          <span className="text-cyan-800">// </span>{data?.name} · {contact.email}
+        </footer>
       </div>
     </div>
   );

@@ -6,12 +6,16 @@
   "scripts": {
     "setup": "node scripts/setup-env.mjs",
     "dev": "vite",
+    "dev:server": "node scripts/local-ai-server.mjs",
+    "dev:full": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$server = Start-Process -FilePath node -ArgumentList 'scripts/local-ai-server.mjs' -PassThru; try { npm run dev } finally { if ($server -and !$server.HasExited) { Stop-Process -Id $server.Id -Force } }\"",
     "build": "vite build",
     "preview": "vite preview",
     "postinstall": "node scripts/setup-env.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
     "file-saver": "^2.0.5",
     "framer-motion": "^11.0.0",
     "jszip": "^3.10.1",

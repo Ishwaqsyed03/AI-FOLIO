@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Loader2, Sparkles, CheckCircle, Upload, FileText } from 'lucide-react';
 import { initializeChat, sendMessage, generateSuggestions } from '../utils/gemini';
+import { toGeminiUserMessage } from '../utils/geminiClient';
 import { extractTextFromPDF, parseResumeWithAI } from '../utils/resumeParser';
 import { extractPortfolioFromTextWithHF, extractPortfolioFromTextHeuristic } from '../utils/hfResumeExtractor';
 
-const ChatBot = ({ onDataComplete }) => {
+const ChatBot = ({ onDataComplete, userName }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -61,7 +62,7 @@ const ChatBot = ({ onDataComplete }) => {
       console.error('Initial message error:', error);
       const errorMessage = {
         role: 'bot',
-        content: `Error: ${error.message || 'Please configure your Gemini API key in the .env file. Copy .env.example to .env and add your API key.'}`,
+        content: `Error: ${toGeminiUserMessage(error)}`,
         timestamp: new Date(),
       };
       setMessages([errorMessage]);
@@ -116,7 +117,7 @@ const ChatBot = ({ onDataComplete }) => {
     } catch (error) {
       const errorMessage = {
         role: 'bot',
-        content: 'Sorry, I encountered an error. Please make sure your API key is configured correctly.',
+        content: `Sorry, I could not reach Gemini right now. ${toGeminiUserMessage(error)}`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -164,15 +165,14 @@ const ChatBot = ({ onDataComplete }) => {
     const animateTo = (target, message, minMs = 400) => new Promise(resolve => {
       if (message) setProgressMessage(message);
       const start = performance.now();
-      const startVal = progress;
+      let startVal = null;
       const step = (now) => {
         setProgress(prev => {
+          if (startVal === null) startVal = prev;
           const elapsed = now - start;
-            // Ease out cubic
           const t = Math.min(1, elapsed / minMs);
           const eased = 1 - Math.pow(1 - t, 3);
-          const next = startVal + (target - startVal) * eased;
-          return next;
+          return startVal + (target - startVal) * eased;
         });
         if (now - start < minMs) {
           requestAnimationFrame(step);
@@ -431,7 +431,7 @@ const ChatBot = ({ onDataComplete }) => {
               </motion.div>
               <div>
                 <h2 className="text-2xl font-bold text-white">AI Portfolio Assistant</h2>
-                <p className="text-indigo-100 text-sm">Let's create your amazing portfolio together!</p>
+                <p className="text-indigo-100 text-sm">{userName ? `Hey ${userName}! Let's create your amazing portfolio!` : "Let's create your amazing portfolio together!"}</p>
               </div>
             </div>
             {/* PDF Upload Button */}
@@ -607,7 +607,7 @@ const ChatBot = ({ onDataComplete }) => {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
               placeholder="Type your message..."
               className="flex-1 bg-slate-700/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 border border-white/10"
               disabled={isLoading}
