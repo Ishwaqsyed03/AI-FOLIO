@@ -16,7 +16,7 @@ const ScorePill = ({ score }) => (
   </div>
 );
 
-const ResumeScreeningDashboard = ({ portfolioData, onBack, onContinue, onApplyRecommendations }) => {
+const ResumeScreeningDashboard = ({ portfolioData, onBack, onContinue, onApplyRecommendations, standalone = false, backLabel = 'Back to Chat' }) => {
   const [jobDescription, setJobDescription] = useState('');
   const [analysis, setAnalysis] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -257,31 +257,35 @@ const ResumeScreeningDashboard = ({ portfolioData, onBack, onContinue, onApplyRe
           {applyStatus && <p className="mt-3 text-sm text-emerald-200">{applyStatus}</p>}
 
           <div className="mt-4 flex flex-wrap gap-3">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleApplyRecommendations}
-              disabled={!analysis || !onApplyRecommendations}
-              className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-5 py-3 text-sm font-semibold text-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Apply to Portfolio Draft
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => onContinue?.()}
-              disabled={!analysis || !onContinue}
-              className="rounded-xl bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-600 px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Continue to Templates
-            </motion.button>
+            {!standalone && (
+              <>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleApplyRecommendations}
+                  disabled={!analysis || !onApplyRecommendations}
+                  className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-5 py-3 text-sm font-semibold text-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Apply to Portfolio Draft
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => onContinue?.()}
+                  disabled={!analysis || !onContinue}
+                  className="rounded-xl bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-600 px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Continue to Templates
+                </motion.button>
+              </>
+            )}
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={onBack}
               className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white"
             >
-              Back to Chat
+              {backLabel}
             </motion.button>
           </div>
         </div>
