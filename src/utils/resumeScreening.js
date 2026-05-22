@@ -1,20 +1,5 @@
-import {
-  clearRuntimeGeminiKey,
-  createGeminiModel,
-  isGeminiInvalidKeyError,
-  toGeminiUserMessage,
-} from './geminiClient';
+import { generateWithGemini } from './geminiProxy';
 import { isLocalModelEnabled, runLocalPrompt } from './localModelClient';
-
-let screeningModel;
-
-const getScreeningModel = () => {
-  if (!screeningModel) {
-    screeningModel = createGeminiModel({ allowPrompt: true });
-  }
-
-  return screeningModel;
-};
 
 const STOP_WORDS = new Set([
   'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'can', 'for', 'from', 'have', 'i', 'in', 'is', 'it', 'job',
@@ -406,11 +391,6 @@ const buildTailoredSummary = (portfolioData = {}, jobKeywords = []) => {
 };
 
 const getAIFeedback = async ({ portfolioData, jobDescription, matchedSkills, missingSkills, score }) => {
-  const model = getScreeningModel();
-  if (!model && !isLocalModelEnabled()) {
-    return null;
-  }
-
   const prompt = `You are a recruiter-facing ATS assistant. Review the resume profile and job description, then return only JSON with this structure:
 {
   "summary": "1-2 sentence recruiter summary",
@@ -433,22 +413,9 @@ Job description:
 ${jobDescription}`;
 
   try {
-    if (!model) {
-      throw new Error('Gemini model unavailable');
-    }
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return parseModelResponse(response.text());
+    const text = await generateWithGemini({ prompt, cfg: { maxOutputTokens: 900, temperature: 0.3 } });
+    return parseModelResponse(text);
   } catch (error) {
-    if (isGeminiInvalidKeyError(error)) {
-      clearRuntimeGeminiKey();
-      screeningModel = null;
-      if (!isLocalModelEnabled()) {
-        throw new Error(toGeminiUserMessage(error));
-      }
-    }
-
     if (isLocalModelEnabled()) {
       try {
         const localText = await runLocalPrompt({

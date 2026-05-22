@@ -1,25 +1,5 @@
-import {
-  clearRuntimeGeminiKey,
-  createGeminiModel,
-  isGeminiInvalidKeyError,
-  resetGeminiPromptState,
-  toGeminiUserMessage,
-} from './geminiClient';
+import { chatWithGemini } from './geminiProxy';
 import { isLocalModelEnabled, runLocalChat } from './localModelClient';
-
-let model;
-
-const getModel = () => {
-  if (!model) {
-    model = createGeminiModel({ allowPrompt: true });
-  }
-
-  if (!model) {
-    throw new Error('Gemini API key not configured. Paste a valid key when prompted to continue.');
-  }
-
-  return model;
-};
 
 const conversationHistory = [];
 
@@ -53,88 +33,60 @@ export const initializeChat = () => {
 };
 
 export const sendMessage = async (message) => {
+  conversationHistory.push({ role: 'user', parts: [{ text: message }] });
+
   try {
-    const activeModel = getModel();
-
-    conversationHistory.push({
-      role: 'user',
-      parts: [{ text: message }],
+    const history = conversationHistory.slice(0, -1);
+    const text = await chatWithGemini({
+      message,
+      history,
+      cfg: { maxOutputTokens: 200, temperature: 0.7 },
     });
 
-    const chat = activeModel.startChat({
-      history: conversationHistory.slice(0, -1),
-      generationConfig: {
-        maxOutputTokens: 200,
-        temperature: 0.7,
-      },
-    });
-
-    const result = await chat.sendMessage(message);
-    const response = await result.response;
-    const text = response.text();
-
-    conversationHistory.push({
-      role: 'model',
-      parts: [{ text }],
-    });
-
+    conversationHistory.push({ role: 'model', parts: [{ text }] });
     return text;
-  } catch (error) {
-    console.error('Gemini API Error:', error);
-    if (isGeminiInvalidKeyError(error)) {
-      clearRuntimeGeminiKey();
-      resetGeminiPromptState();
-      model = null;
-    }
 
+  } catch (error) {
+    // Try local model fallback if available
     if (isLocalModelEnabled()) {
       try {
         const localHistory = conversationHistory
-          .slice(1)
-          .map((entry) => ({
-            role: entry.role === 'model' ? 'assistant' : 'user',
-            content: entry.parts?.[0]?.text || '',
+          .slice(1, -1)
+          .map((e) => ({
+            role: e.role === 'model' ? 'assistant' : 'user',
+            content: e.parts?.[0]?.text || '',
           }))
-          .filter((entry) => entry.content.trim());
+          .filter((e) => e.content.trim());
 
         const localReply = await runLocalChat({
           systemPrompt,
-          history: localHistory.slice(0, -1),
+          history: localHistory,
           message,
           temperature: 0.7,
           maxOutputTokens: 220,
         });
 
-        conversationHistory.push({
-          role: 'model',
-          parts: [{ text: localReply }],
-        });
-
+        conversationHistory.push({ role: 'model', parts: [{ text: localReply }] });
         return localReply;
       } catch (localError) {
-        throw new Error(`${toGeminiUserMessage(error)} Local fallback failed: ${localError.message}`);
+        throw new Error(`${error.message} — Local fallback also failed: ${localError.message}`);
       }
     }
 
-    throw new Error(toGeminiUserMessage(error));
+    throw error;
   }
 };
 
-// Generate contextual suggestions based on the conversation state
+// Generate contextual quick-reply suggestions (pure client logic, no AI)
 export const generateSuggestions = (lastBotMessage, collectedData) => {
   const lowerMessage = lastBotMessage.toLowerCase();
 
-  // Name question - check for specific name-related words
   if ((lowerMessage.includes('name') || lowerMessage.includes('call you')) && lowerMessage.includes('?')) {
     return ['John Doe', 'Jane Smith', 'Alex Johnson'];
   }
-
-  // Title/Role question - be more specific
   if ((lowerMessage.includes('what do you do') || lowerMessage.includes('your role') || lowerMessage.includes('job title') || lowerMessage.includes('professional title')) && !lowerMessage.includes('experience')) {
     return ['Full Stack Developer', 'Frontend Developer', 'UI/UX Designer'];
   }
-
-  // Bio/About question
   if (lowerMessage.includes('about yourself') || lowerMessage.includes('tell me about you') || lowerMessage.includes('describe yourself') || (lowerMessage.includes('bio') && lowerMessage.includes('?'))) {
     return [
       'Passionate developer with 5+ years building web applications',
@@ -142,8 +94,6 @@ export const generateSuggestions = (lastBotMessage, collectedData) => {
       'Problem solver who loves creating innovative solutions',
     ];
   }
-
-  // Skills question
   if (lowerMessage.includes('skill') || lowerMessage.includes('technologies') || lowerMessage.includes('tools')) {
     return [
       'JavaScript, React, Node.js, MongoDB, Docker',
@@ -151,8 +101,6 @@ export const generateSuggestions = (lastBotMessage, collectedData) => {
       'Figma, Adobe XD, HTML/CSS, Tailwind',
     ];
   }
-
-  // Experience question
   if ((lowerMessage.includes('work experience') || lowerMessage.includes('where have you worked') || lowerMessage.includes('previous roles')) && !lowerMessage.includes('project')) {
     return [
       'Senior Software Engineer at Tech Corp (2020-2023)',
@@ -160,8 +108,6 @@ export const generateSuggestions = (lastBotMessage, collectedData) => {
       'Full Stack Developer at Digital Agency (2021-Present)',
     ];
   }
-
-  // Projects question
   if (lowerMessage.includes('project') && (lowerMessage.includes('worked on') || lowerMessage.includes('built') || lowerMessage.includes('created'))) {
     return [
       'E-commerce Platform using React, Node.js, and Stripe',
@@ -169,8 +115,6 @@ export const generateSuggestions = (lastBotMessage, collectedData) => {
       'Social Media Dashboard built with Next.js',
     ];
   }
-
-  // Education question
   if (lowerMessage.includes('education') || lowerMessage.includes('degree') || lowerMessage.includes('studied') || lowerMessage.includes('university')) {
     return [
       'Bachelor of Computer Science, MIT, 2020',
@@ -178,43 +122,18 @@ export const generateSuggestions = (lastBotMessage, collectedData) => {
       'BS Information Technology, State University, 2019',
     ];
   }
-
-  // Contact/Email question
   if (lowerMessage.includes('email') || lowerMessage.includes('contact') || lowerMessage.includes('reach you')) {
-    return [
-      'john.doe@example.com',
-      'jane.smith@email.com',
-      'alex.developer@gmail.com',
-    ];
+    return ['john.doe@example.com', 'jane.smith@email.com', 'alex.developer@gmail.com'];
   }
-
-  // Phone question
   if (lowerMessage.includes('phone') || lowerMessage.includes('number')) {
-    return [
-      '+1 (555) 123-4567',
-      '+44 20 1234 5678',
-      '+91 98765 43210',
-    ];
+    return ['+1 (555) 123-4567', '+44 20 1234 5678', '+91 98765 43210'];
   }
-
-  // LinkedIn question
   if (lowerMessage.includes('linkedin')) {
-    return [
-      'linkedin.com/in/johndoe',
-      'linkedin.com/in/janesmith',
-      'linkedin.com/in/alexjohnson',
-    ];
+    return ['linkedin.com/in/johndoe', 'linkedin.com/in/janesmith', 'linkedin.com/in/alexjohnson'];
   }
-
-  // GitHub question
   if (lowerMessage.includes('github') || lowerMessage.includes('git')) {
-    return [
-      'github.com/johndoe',
-      'github.com/janesmith',
-      'github.com/alexdev',
-    ];
+    return ['github.com/johndoe', 'github.com/janesmith', 'github.com/alexdev'];
   }
 
-  // Default suggestions for confirmation
-  return ['Yes, that\'s correct', 'Let me provide more details', 'Continue'];
+  return ["Yes, that's correct", 'Let me provide more details', 'Continue'];
 };

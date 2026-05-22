@@ -11,7 +11,7 @@ import {
   Wand2,
   Loader2,
 } from 'lucide-react';
-import { createGeminiModel, toGeminiUserMessage } from '../utils/geminiClient';
+import { chatWithGemini } from '../utils/geminiProxy';
 
 const SYSTEM_PROMPT = `You are an empathetic, expert AI career coach.
 Your role is to give the user clear, practical, encouraging career advice.
@@ -42,18 +42,7 @@ const CareerCoachChat = ({ userName, portfolioData, onBack }) => {
   const [input, setInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   const [error, setError] = useState('');
-  const modelRef = useRef(null);
   const scrollRef = useRef(null);
-
-  const getModel = () => {
-    if (!modelRef.current) {
-      modelRef.current = createGeminiModel({ allowPrompt: true });
-    }
-    if (!modelRef.current) {
-      throw new Error('Gemini API key not configured. Paste a valid key when prompted to continue.');
-    }
-    return modelRef.current;
-  };
 
   const profileContext = React.useMemo(() => {
     if (!portfolioData) return '';
@@ -92,7 +81,6 @@ const CareerCoachChat = ({ userName, portfolioData, onBack }) => {
     setIsThinking(true);
 
     try {
-      const model = getModel();
       const history = next
         .slice(0, -1)
         .map((m) => ({
@@ -100,22 +88,19 @@ const CareerCoachChat = ({ userName, portfolioData, onBack }) => {
           parts: [{ text: m.text }],
         }));
 
-      const seed = profileContext
+      const systemPrompt = profileContext
         ? `${SYSTEM_PROMPT}\n\nUser profile context:\n${profileContext}`
         : SYSTEM_PROMPT;
 
-      const chat = model.startChat({
-        history: [
-          { role: 'user', parts: [{ text: seed }] },
-          ...history,
-        ],
-        generationConfig: { maxOutputTokens: 600, temperature: 0.75 },
+      const reply = await chatWithGemini({
+        message: content,
+        history,
+        systemPrompt,
+        cfg: { maxOutputTokens: 600, temperature: 0.75 },
       });
-      const result = await chat.sendMessage(content);
-      const reply = (await result.response).text();
       setMessages((m) => [...m, { role: 'coach', text: reply }]);
     } catch (e) {
-      setError(toGeminiUserMessage(e));
+      setError(e.message || 'AI request failed. Please try again.');
     } finally {
       setIsThinking(false);
     }
