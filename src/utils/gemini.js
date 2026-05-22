@@ -2,6 +2,7 @@ import {
   clearRuntimeGeminiKey,
   createGeminiModel,
   isGeminiInvalidKeyError,
+  resetGeminiPromptState,
   toGeminiUserMessage,
 } from './geminiClient';
 import { isLocalModelEnabled, runLocalChat } from './localModelClient';
@@ -82,6 +83,7 @@ export const sendMessage = async (message) => {
     console.error('Gemini API Error:', error);
     if (isGeminiInvalidKeyError(error)) {
       clearRuntimeGeminiKey();
+      resetGeminiPromptState();
       model = null;
     }
 
