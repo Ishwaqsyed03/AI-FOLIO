@@ -395,7 +395,7 @@ function Footer() {
   return (
     <footer className="pb-8 pt-4">
       <div className="container mx-auto px-4 text-center text-xs text-white/40">
-        © {new Date().getFullYear()} AI-FOLIO • Ishwaq Syed
+        © {new Date().getFullYear()} AI-FOLIO • Built by Ishwaq Syed
       </div>
     </footer>
   );
